@@ -1,4 +1,5 @@
 // #include "src/memllib/interface/InterfaceBase.hpp"
+#include "src/memllib/interface/MIDIInOut.hpp"
 #include "display.hpp"
 #include "src/memllib/audio/AudioAppBase.hpp"
 #include "src/memllib/audio/AudioDriver.hpp"
@@ -32,6 +33,9 @@ uint32_t get_rosc_entropy_seed(int bits) {
 // Global objects
 std::shared_ptr<InterfaceRL> APP_SRAM RLInterface;
 
+std::shared_ptr<MIDIInOut> APP_SRAM midi_interf;
+
+
 std::shared_ptr<PAFSynthAudioApp> __scratch_y("audio") audio_app;
 
 // Inter-core communication
@@ -39,6 +43,7 @@ volatile bool APP_SRAM core_0_ready = false;
 volatile bool APP_SRAM core_1_ready = false;
 volatile bool APP_SRAM serial_ready = false;
 volatile bool APP_SRAM interface_ready = false;
+
 
 
 // We're only bound to the joystick inputs (x, y, rotate)
@@ -87,6 +92,22 @@ void setup()
     RLInterface->bind_RL_interface(scr);
     Serial.println("Bound RL interface to MEMLNaut.");
 
+    midi_interf = std::make_shared<MIDIInOut>();
+    midi_interf->Setup(0);
+    midi_interf->SetMIDISendChannel(1);
+    Serial.println("MIDI setup complete.");
+    if (midi_interf) {
+        midi_interf->SetNoteCallback([RLInterface] (bool noteon, uint8_t note_number, uint8_t vel_value) {
+        if (noteon) {
+            uint8_t midimsg[2] = {note_number, vel_value };
+            queue_try_add(&audio_app->qMIDINoteOn, &midimsg);   
+        }
+            Serial.printf("MIDI Note %d: %d\n", note_number, vel_value);
+        });
+        Serial.println("MIDI note callback set.");
+    }
+
+
 
     WRITE_VOLATILE(core_0_ready, true);
     while (!READ_VOLATILE(core_1_ready)) {
@@ -115,6 +136,7 @@ void loop()
         // Un-blink LED
         digitalWrite(33, LOW);
     }
+    midi_interf->Poll();
     delay(10); // Add a small delay to avoid flooding the serial output
 }
 

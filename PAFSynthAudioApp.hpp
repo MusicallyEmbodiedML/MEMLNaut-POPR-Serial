@@ -31,6 +31,9 @@ public:
 
     void ProcessParams(const std::vector<float>& params) override;
 
+    queue_t qMIDINoteOn, qMIDINoteOff;
+
+    void loop() override; 
 protected:
 
     maxiPAFOperator paf0;
@@ -79,7 +82,7 @@ protected:
     float arpFreq=50;
 
     maxiLine line;
-    float envamp;
+    float envamp=0.f;
 
     float detune = 1.0;
 
@@ -87,6 +90,11 @@ protected:
     maxiTrigger zxdetect;
 
     size_t euclidN=4;
+
+    float baseFreq = 50.0f; // Base frequency for the synth
+    bool newNote=false;
+    float noteVel = 0.f;
+    bool firstParamsReceived = false;
 
 };
 

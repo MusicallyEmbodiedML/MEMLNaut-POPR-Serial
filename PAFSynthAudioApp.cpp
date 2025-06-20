@@ -23,10 +23,10 @@ stereosample_t PAFSynthAudioApp::Process(const stereosample_t x)
 
     // const float trig = pulse.square(1);
 
-    paf0.play(x1, 1, arpFreq, arpFreq + (paf0_cf * arpFreq), paf0_bw * arpFreq, paf0_vib, paf0_vfr, paf0_shift, 0);
+    paf0.play(x1, 1, baseFreq, baseFreq + (paf0_cf * baseFreq), paf0_bw * baseFreq, paf0_vib, paf0_vfr, paf0_shift, 0);
     float y = x1[0];
 
-    const float freq1 = arpFreq * detune;
+    const float freq1 = baseFreq * detune;
 
     paf1.play(x1, 1, freq1, freq1 + (paf1_cf * freq1), paf1_bw * freq1, paf1_vib, paf1_vfr, paf1_shift, 1);
     y += x1[0];
@@ -36,18 +36,20 @@ stereosample_t PAFSynthAudioApp::Process(const stereosample_t x)
     paf2.play(x1, 1, freq2, freq2 + (paf2_cf * freq2), paf2_bw * freq2, paf2_vib, paf2_vfr, paf2_shift, 1);
     y += x1[0];
 
-    const float ph = phasorOsc.phasor(1);
-    const bool euclidNewNote = euclidean(ph, 12, euclidN, 0, 0.1f);
+    // const float ph = phasorOsc.phasor(1);
+    // const bool euclidNewNote = euclidean(ph, 12, euclidN, 0, 0.1f);
     // y = y * 0.3f;
     // const float envamp = env.play(counter==0);
     // const float envamp = line.play(counter==0);
-    if(zxdetect.onZX(euclidNewNote)) {
-        envamp=0.2f;
-        freqIndex++;
-        if(freqIndex >= 4) {
-            freqIndex = 0;
-        }
-        arpFreq = frequencies[freqIndex];
+    if(newNote) {
+    // if(zxdetect.onZX(euclidNewNote)) {
+        newNote = false;
+        envamp=0.8f;
+        // freqIndex++;
+        // if(freqIndex >= 4) {
+        //     freqIndex = 0;
+        // }
+        // arpFreq = frequencies[freqIndex];
    }else{
         constexpr float envdec = 0.2f/9000.f;
         envamp -= envdec;
@@ -71,6 +73,8 @@ stereosample_t PAFSynthAudioApp::Process(const stereosample_t x)
     //     Serial.println(envamp);
     // })
 
+    y *= noteVel;
+
     float d1 = (dl1.play(y, 3500, 0.8f) * dl1mix);
     // float d2 = (dl2.play(y, 15000, 0.8f) * dl2mix);
     y = y + d1;// + d2;
@@ -83,6 +87,8 @@ void PAFSynthAudioApp::Setup(float sample_rate, std::shared_ptr<InterfaceBase> i
 {
     AudioAppBase::Setup(sample_rate, interface);
     maxiSettings::sampleRate = sample_rate;
+
+
     paf0.init();
     paf0.setsr(maxiSettings::getSampleRate(), 1);
     // paf0.freq(100, 0);
@@ -118,10 +124,32 @@ void PAFSynthAudioApp::Setup(float sample_rate, std::shared_ptr<InterfaceBase> i
     // line.prepare(1.f,0.f,100.f,false);
     // line.triggerEnable(true);
     envamp=1.f;
+
+    queue_init(&qMIDINoteOn, sizeof(uint8_t)*2, 1);
+
 }
+
+float mtof(uint8_t note) {
+    // Convert MIDI note to frequency
+    return 440.0f * powf(2.0f, (note - 69) / 12.0f);
+}
+
+void PAFSynthAudioApp::loop(){
+    AudioAppBase::loop();
+    uint8_t midimsg[2];
+    if (firstParamsReceived && queue_try_remove(&qMIDINoteOn, &midimsg)) {
+        // Serial.printf("PAFSynthAudioApp::ProcessParams - Received MIDI Note On: %d, Velocity: %d\n", midimsg[0], midimsg[1]);
+        baseFreq = mtof(midimsg[0]);
+        noteVel = midimsg[1] / 127.0f; // Normalize velocity to [0, 1]
+        noteVel = noteVel * noteVel; // Square the velocity for more pronounced effect
+        newNote = true;
+    }
+}
+
 
 void PAFSynthAudioApp::ProcessParams(const std::vector<float>& params)
 {
+    firstParamsReceived = true;
     // // Map parameters to the synth
     // synth_.mapParameters(params);
     // //Serial.print("Params processed.");
