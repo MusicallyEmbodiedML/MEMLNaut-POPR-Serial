@@ -7,12 +7,10 @@
 #include <memory>
 #include "hardware/structs/bus_ctrl.h"
 #include "PAFSynthAudioApp.hpp"
-#include "src/memllib/interface/InterfaceRL.hpp"
+#include "src/memllib/examples/IMLInterface.hpp"
 
 
 #define APP_SRAM __not_in_flash("app")
-
-display APP_SRAM scr;
 
 bool core1_disable_systick = true;
 bool core1_separate_stack = true;
@@ -31,7 +29,8 @@ uint32_t get_rosc_entropy_seed(int bits) {
 
 
 // Global objects
-std::shared_ptr<InterfaceRL> APP_SRAM RLInterface;
+std::shared_ptr<IMLInterface> APP_SRAM interface;
+std::shared_ptr<display> APP_SRAM scr;
 
 std::shared_ptr<MIDIInOut> APP_SRAM midi_interf;
 
@@ -57,14 +56,14 @@ constexpr size_t kN_InputParams = 3;
 
 struct repeating_timer APP_SRAM timerDisplay;
 inline bool __not_in_flash_func(displayUpdate)(__unused struct repeating_timer *t) {
-    scr.update();
+    scr->update();
     return true;
 }
 
 void setup()
 {
-
-    scr.setup();
+    scr = std::make_shared<display>();
+    scr->setup();
     bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS |
         BUSCTRL_BUS_PRIORITY_DMA_R_BITS | BUSCTRL_BUS_PRIORITY_PROC1_BITS;
 
@@ -80,16 +79,16 @@ void setup()
     MEMLNaut::Initialize();
     pinMode(33, OUTPUT);
 
-    auto temp_interface = std::make_shared<InterfaceRL>();
-    temp_interface->setup(kN_InputParams, PAFSynthAudioApp::kN_Params);
+    auto temp_interface = std::make_shared<IMLInterface>();
+    temp_interface->setup(kN_InputParams, PAFSynthAudioApp::kN_Params, scr);
     MEMORY_BARRIER();
-    RLInterface = temp_interface;
+    interface = temp_interface;
     MEMORY_BARRIER();
 
     // Setup interface with memory barrier protection
     WRITE_VOLATILE(interface_ready, true);
     // Bind interface after ensuring it's fully initialized
-    RLInterface->bind_RL_interface(scr);
+    interface->bindInterface();
     Serial.println("Bound RL interface to MEMLNaut.");
 
     midi_interf = std::make_shared<MIDIInOut>();
@@ -115,7 +114,7 @@ void setup()
         delay(1);
     }
 
-    scr.post("MEMLNaut: let's go!");
+    scr->post("MEMLNaut - PAF Synth with IML");
     add_repeating_timer_ms(-39, displayUpdate, NULL, &timerDisplay);
 
     Serial.println("Finished initialising core 0.");
@@ -157,8 +156,7 @@ void setup1()
     {
         auto temp_audio_app = std::make_shared<PAFSynthAudioApp>();
 
-        temp_audio_app->Setup(AudioDriver::GetSampleRate(), RLInterface);
-        // temp_audio_app->Setup(AudioDriver::GetSampleRate(), dynamic_cast<std::shared_ptr<InterfaceBase>> (mlMode == IML ? interfaceIML : RLInterface));
+        temp_audio_app->Setup(AudioDriver::GetSampleRate(), interface);
         MEMORY_BARRIER();
         audio_app = temp_audio_app;
         MEMORY_BARRIER();
