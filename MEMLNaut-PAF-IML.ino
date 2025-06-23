@@ -12,6 +12,8 @@
 
 #define APP_SRAM __not_in_flash("app")
 
+const char FIRMWARE_NAME[] = "-- PAF synth POPR --";
+
 bool core1_disable_systick = true;
 bool core1_separate_stack = true;
 
@@ -114,7 +116,7 @@ void setup()
         delay(1);
     }
 
-    scr->post("MEMLNaut - PAF Synth with IML");
+    scr->post(FIRMWARE_NAME);
     add_repeating_timer_ms(-39, displayUpdate, NULL, &timerDisplay);
 
     Serial.println("Finished initialising core 0.");
