@@ -96,7 +96,7 @@ void setup()
     midi_interf->SetMIDISendChannel(1);
     Serial.println("MIDI setup complete.");
     if (midi_interf) {
-        midi_interf->SetNoteCallback([RLInterface] (bool noteon, uint8_t note_number, uint8_t vel_value) {
+        midi_interf->SetNoteCallback([interface] (bool noteon, uint8_t note_number, uint8_t vel_value) {
         if (noteon) {
             uint8_t midimsg[2] = {note_number, vel_value };
             queue_try_add(&audio_app->qMIDINoteOn, &midimsg);
