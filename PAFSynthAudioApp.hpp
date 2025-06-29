@@ -16,9 +16,11 @@
 class PAFSynthAudioApp : public AudioAppBase
 {
 public:
-    static constexpr size_t kN_Params = 21;
-    static constexpr size_t nFREQs = 17;
-    static constexpr float frequencies[nFREQs] = {100, 200, 400,800, 400, 800, 100,1600,100,400,100,50,1600,200,100,800,400};
+    static constexpr size_t kN_Params = 22;
+    // static constexpr size_t nFREQs = 17;
+    // static constexpr float frequencies[nFREQs] = {100, 200, 400,800, 400, 800, 100,1600,100,400,100,50,1600,200,100,800,400};
+    static constexpr size_t nFREQs = 5;
+    static constexpr float frequencies[nFREQs] = {100, 200, 400,800,1600};
 
 
     PAFSynthAudioApp();
@@ -95,6 +97,8 @@ protected:
     bool newNote=false;
     float noteVel = 0.f;
     bool firstParamsReceived = false;
+
+    float envdec=0.2f/9000.f; // Decay rate for the envelope
 
 };
 
