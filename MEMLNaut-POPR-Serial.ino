@@ -1,6 +1,6 @@
 // #include "src/memllib/interface/InterfaceBase.hpp"
 #include "src/memllib/interface/MIDIInOut.hpp"
-#include "display.hpp"
+#include "src/memllib/hardware/memlnaut/display.hpp"
 #include "src/memllib/audio/AudioAppBase.hpp"
 #include "src/memllib/audio/AudioDriver.hpp"
 #include "src/memllib/hardware/memlnaut/MEMLNaut.hpp"
@@ -81,7 +81,7 @@ void setup() {
 
   Serial.begin(115200);
   // while (!Serial) {}
-  Serial.println("Serial initialised.");
+   DEBUG_PRINTLN("Serial initialised.");
   WRITE_VOLATILE(serial_ready, true);
 
   // Setup board
@@ -98,21 +98,21 @@ void setup() {
   WRITE_VOLATILE(interface_ready, true);
   // Bind interface after ensuring it's fully initialized
   interface->bindInterface();
-  Serial.println("Bound RL interface to MEMLNaut.");
+   DEBUG_PRINTLN("Bound RL interface to MEMLNaut.");
 
   midi_interf = std::make_shared<MIDIInOut>();
   midi_interf->Setup(0);
   midi_interf->SetMIDISendChannel(1);
-  Serial.println("MIDI setup complete.");
+   DEBUG_PRINTLN("MIDI setup complete.");
   if (midi_interf) {
     midi_interf->SetNoteCallback([interface](bool noteon, uint8_t note_number, uint8_t vel_value) {
       if (noteon) {
         uint8_t midimsg[2] = { note_number, vel_value };
         queue_try_add(&audio_app->qMIDINoteOn, &midimsg);
       }
-      Serial.printf("MIDI Note %d: %d\n", note_number, vel_value);
+       DEBUG_PRINTF("MIDI Note %d: %d\n", note_number, vel_value);
     });
-    Serial.println("MIDI note callback set.");
+     DEBUG_PRINTLN("MIDI note callback set.");
   }
 
   usbserialIn = std::make_shared<SerialUSBInput>(scr, 115200);
@@ -128,10 +128,10 @@ void setup() {
   scr->post(FIRMWARE_NAME);
   add_repeating_timer_ms(-39, displayUpdate, NULL, &timerDisplay);
 
-  Serial.println("Finished initialising core 0.");
+  DEBUG_PRINTLN("Finished initialising core 0.");
 }
 
-uint8_t APP_SRAM message[64];
+// uint8_t APP_SRAM message[64];
 
 /**
  * Alternative implementation using union (also safe)
@@ -172,7 +172,7 @@ void loop() {
   static int AUDIO_MEM blip_counter = 0;
   if (blip_counter++ > 100) {
     blip_counter = 0;
-    Serial.println(".");
+     DEBUG_PRINTLN(".");
     // Blink LED
     digitalWrite(33, HIGH);
   } else {
@@ -214,7 +214,7 @@ void setup1() {
     delay(1);
   }
 
-  Serial.println("Finished initialising core 1.");
+   DEBUG_PRINTLN("Finished initialising core 1.");
 }
 
 void loop1() {

@@ -30,13 +30,13 @@ public:
         perform_inference_ = true;
         input_updated_ = false;
 
-        Serial.println("IMLInterface setup done");
-        Serial.print("Address of n_inputs_: ");
-        Serial.println(reinterpret_cast<uintptr_t>(&n_inputs_));
-        Serial.print("Inputs: ");
-        Serial.print(n_inputs_);
-        Serial.print(", Outputs: ");
-        Serial.println(n_outputs_);
+         DEBUG_PRINTLN("IMLInterface setup done");
+         DEBUG_PRINT("Address of n_inputs_: ");
+         DEBUG_PRINTLN(reinterpret_cast<uintptr_t>(&n_inputs_));
+         DEBUG_PRINT("Inputs: ");
+         DEBUG_PRINT(n_inputs_);
+         DEBUG_PRINT(", Outputs: ");
+         DEBUG_PRINTLN(n_outputs_);
     }
 
     enum training_mode_t {
@@ -46,8 +46,8 @@ public:
 
     void SetTrainingMode(training_mode_t training_mode)
     {
-        Serial.print("Training mode: ");
-        Serial.println(training_mode == INFERENCE_MODE ? "Inference" : "Training");
+         DEBUG_PRINT("Training mode: ");
+         DEBUG_PRINTLN(training_mode == INFERENCE_MODE ? "Inference" : "Training");
 
         if (training_mode == INFERENCE_MODE && training_mode_ == TRAINING_MODE) {
             // Train the network!
@@ -67,15 +67,15 @@ public:
 
     void SetInput(size_t index, float value)
     {
-        // Serial.print("Input ");
-        // Serial.print(index);
-        // Serial.print(" set to: ");
-        // Serial.println(value);
+         DEBUG_PRINT("Input ");
+         DEBUG_PRINT(index);
+         DEBUG_PRINT(" set to: ");
+         DEBUG_PRINTLN(value);
 
         if (index >= n_inputs_) {
-            Serial.print("Input index ");
-            Serial.print(index);
-            Serial.println(" out of bounds.");
+             DEBUG_PRINT("Input index ");
+             DEBUG_PRINT(index);
+             DEBUG_PRINTLN(" out of bounds.");
             return;
         }
 
@@ -99,12 +99,12 @@ public:
     {
         if (STORE_VALUE_MODE == mode) {
 
-            Serial.println("Move input to position...");
+             DEBUG_PRINTLN("Move input to position...");
             perform_inference_ = false;
 
         } else {  // STORE_POSITION_MODE
 
-            Serial.println("Creating example in this position.");
+             DEBUG_PRINTLN("Creating example in this position.");
             // Save pair in the dataset
             dataset_->Add(input_state_, output_state_);
             perform_inference_ = true;
@@ -116,7 +116,7 @@ public:
     void ClearData()
     {
         if (training_mode_ == TRAINING_MODE) {
-            Serial.println("Clearing dataset...");
+             DEBUG_PRINTLN("Clearing dataset...");
             dataset_->Clear();
         }
     }
@@ -124,7 +124,7 @@ public:
     void Randomise()
     {
         if (training_mode_ == TRAINING_MODE) {
-            Serial.println("Randomising weights...");
+             DEBUG_PRINTLN("Randomising weights...");
             MLRandomise_();
             MLInference_(input_state_);
         }
@@ -133,8 +133,8 @@ public:
     void SetIterations(size_t iterations)
     {
         n_iterations_ = iterations;
-        Serial.print("Iterations set to: ");
-        Serial.println(n_iterations_);
+         DEBUG_PRINT("Iterations set to: ");
+         DEBUG_PRINTLN(n_iterations_);
     }
 
 protected:
@@ -191,16 +191,16 @@ protected:
     void MLInference_(std::vector<float> input)
     {
         if (!dataset_ || !mlp_) {
-            Serial.println("ML not initialized!");
+             DEBUG_PRINTLN("ML not initialized!");
             return;
         }
 
         if (input.size() != n_inputs_) {
-            Serial.print("Input size mismatch - ");
-            Serial.print("Expected: ");
-            Serial.print(n_inputs_);
-            Serial.print(", Got: ");
-            Serial.println(input.size());
+             DEBUG_PRINT("Input size mismatch - ");
+             DEBUG_PRINT("Expected: ");
+             DEBUG_PRINT(n_inputs_);
+             DEBUG_PRINT(", Got: ");
+             DEBUG_PRINTLN(input.size());
             return;
         }
 
@@ -216,7 +216,7 @@ protected:
     void MLRandomise_()
     {
         if (!mlp_) {
-            Serial.println("ML not initialized!");
+             DEBUG_PRINTLN("ML not initialized!");
             return;
         }
 
@@ -229,7 +229,7 @@ protected:
     void MLTraining_()
     {
         if (!mlp_) {
-            Serial.println("ML not initialized!");
+             DEBUG_PRINTLN("ML not initialized!");
             return;
         }
         // Restore old weights
@@ -242,34 +242,34 @@ protected:
         // Extract dataset to training pair
         MLP<float>::training_pair_t dataset(dataset_->GetFeatures(), dataset_->GetLabels());
         // Check and report on dataset size
-        Serial.print("Feature size ");
-        Serial.print(dataset.first.size());
-        Serial.print(", label size ");
-        Serial.println(dataset.second.size());
+         DEBUG_PRINT("Feature size ");
+         DEBUG_PRINT(dataset.first.size());
+         DEBUG_PRINT(", label size ");
+         DEBUG_PRINTLN(dataset.second.size());
         if (!dataset.first.size() || !dataset.second.size()) {
-            Serial.println("Empty dataset!");
+             DEBUG_PRINTLN("Empty dataset!");
             return;
         }
-        Serial.print("Feature dim ");
-        Serial.print(dataset.first[0].size());
-        Serial.print(", label dim ");
-        Serial.println(dataset.second[0].size());
+         DEBUG_PRINT("Feature dim ");
+         DEBUG_PRINT(dataset.first[0].size());
+         DEBUG_PRINT(", label dim ");
+         DEBUG_PRINTLN(dataset.second[0].size());
         if (!dataset.first[0].size() || !dataset.second[0].size()) {
-            Serial.println("Empty dataset dimensions!");
+             DEBUG_PRINTLN("Empty dataset dimensions!");
             return;
         }
 
         // Training loop
-        Serial.print("Training for max ");
-        Serial.print(n_iterations_);
-        Serial.println(" iterations...");
+         DEBUG_PRINT("Training for max ");
+         DEBUG_PRINT(n_iterations_);
+         DEBUG_PRINTLN(" iterations...");
         float loss = mlp_->Train(dataset,
                 1.,
                 n_iterations_,
                 0.00001,
                 false);
-        Serial.print("Trained, loss = ");
-        Serial.println(loss, 10);
+         DEBUG_PRINT("Trained, loss = ");
+         DEBUG_PRINTLN(loss, 10);
     }
 };
 

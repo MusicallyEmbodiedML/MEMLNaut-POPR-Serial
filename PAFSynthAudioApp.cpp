@@ -68,7 +68,7 @@ stereosample_t PAFSynthAudioApp::Process(const stereosample_t x)
     }
 #endif
 
-    // PERIODIC_DEBUG(3000, Serial.println(y);)
+    // PERIODIC_DEBUG(3000, DEBUG_PRINTLN(y);)
     y = y * envamp* envamp;
     // counter++;
     // if(counter>=9000) {
@@ -81,7 +81,7 @@ stereosample_t PAFSynthAudioApp::Process(const stereosample_t x)
     // }
 
     // PERIODIC_DEBUG(10000, {
-    //     Serial.println(envamp);
+    //     DEBUG_PRINTLN(envamp);
     // })
 #ifndef ARPEGGIATOR
     y *= noteVel;
@@ -151,7 +151,7 @@ void PAFSynthAudioApp::loop(){
     uint8_t midimsg[2];
 
     if (firstParamsReceived && queue_try_remove(&qMIDINoteOn, &midimsg)) {
-        // Serial.printf("PAFSynthAudioApp::ProcessParams - Received MIDI Note On: %d, Velocity: %d\n", midimsg[0], midimsg[1]);
+         DEBUG_PRINTF("PAFSynthAudioApp::ProcessParams - Received MIDI Note On: %d, Velocity: %d\n", midimsg[0], midimsg[1]);
         baseFreq = mtof(midimsg[0]);
         noteVel = midimsg[1] / 127.0f; // Normalize velocity to [0, 1]
         noteVel = noteVel * noteVel; // Square the velocity for more pronounced effect
@@ -165,7 +165,7 @@ void PAFSynthAudioApp::ProcessParams(const std::vector<float>& params)
     firstParamsReceived = true;
     // // Map parameters to the synth
     // synth_.mapParameters(params);
-    // //Serial.print("Params processed.");
+    // //DEBUG_PRINT("Params processed.");
     // paf0_freq = 50.f + (params[0] * params[0] * 1000.f);
     // paf1_freq = 50.f + (params[1] * params[1] * 1000.f);
 
@@ -204,5 +204,5 @@ void PAFSynthAudioApp::ProcessParams(const std::vector<float>& params)
     envdec=((params[20] * 3.f) + 0.1f)/9000.f; // Decay rate for the envelope
 
 
-    // Serial.printf("%f %f %f %f %f\n", paf0_cf,  paf0_bw, paf0_vib, paf0_vfr, paf0_shift);
+     DEBUG_PRINTF("%f %f %f %f %f\n", paf0_cf,  paf0_bw, paf0_vib, paf0_vfr, paf0_shift);
 }
