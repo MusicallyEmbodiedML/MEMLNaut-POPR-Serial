@@ -118,7 +118,8 @@ void setup() {
         // Value is [-1, 1], scale to [0, 1]
         float scaled_value = (values[i] + 1.0f) * 0.5f; // Scale to [0, 1]
         // Post each value to the interface
-        if (i == 0) scr->post("In0: " + String(values[i], 4) + ", scale: " + String(scaled_value, 4));
+        //if (i == 0) scr->post("In0: " + String(values[i], 4) + ", scale: " + String(scaled_value, 4));
+        interface->SetInput(i, scaled_value);
       }
       //interface->ProcessInput();
 
@@ -177,6 +178,7 @@ void loop() {
 //     }
 //   }
   MEMLNaut::Instance()->loop();
+
   static int AUDIO_MEM blip_counter = 0;
   if (blip_counter++ > 100) {
     blip_counter = 0;
