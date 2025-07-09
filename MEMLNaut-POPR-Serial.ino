@@ -7,13 +7,12 @@
 #include "src/memllib/interface/SerialUSBInput.hpp"
 #include <memory>
 #include "hardware/structs/bus_ctrl.h"
-#include "PAFSynthAudioApp.hpp"
-#include "src/memllib/examples/IMLInterface.hpp"
+#include "src/memllib/examples/SteliosInterface.hpp"
 
 
 #define APP_SRAM __not_in_flash("app")
 
-const char FIRMWARE_NAME[] = "-- PAF synth POPR --";
+const char FIRMWARE_NAME[] = "-- MESStelios --";
 
 bool core1_disable_systick = true;
 bool core1_separate_stack = true;
@@ -32,16 +31,11 @@ uint32_t get_rosc_entropy_seed(int bits) {
 
 
 // Global objects
-std::shared_ptr<IMLInterface> APP_SRAM interface;
+std::shared_ptr<SteliosInterface> APP_SRAM interface;
 std::shared_ptr<display> APP_SRAM scr;
 
 std::shared_ptr<MIDIInOut> APP_SRAM midi_interf;
 std::shared_ptr<SerialUSBInput> APP_SRAM usbserialIn;
-
-
-
-
-std::shared_ptr<PAFSynthAudioApp> __scratch_y("audio") audio_app;
 
 // Inter-core communication
 volatile bool APP_SRAM core_0_ready = false;
@@ -51,8 +45,9 @@ volatile bool APP_SRAM interface_ready = false;
 
 
 
-// We're only bound to the joystick inputs (x, y, rotate)
-constexpr size_t kN_InputParams = 3;
+// Input params from serial
+constexpr size_t kN_InputParams = 10;
+constexpr size_t kN_Classes = 2;
 
 // Add these macros near other globals
 #define MEMORY_BARRIER() __sync_synchronize()
@@ -88,8 +83,8 @@ void setup() {
   MEMLNaut::Initialize();
   pinMode(33, OUTPUT);
 
-  auto temp_interface = std::make_shared<IMLInterface>();
-  temp_interface->setup(kN_InputParams, PAFSynthAudioApp::kN_Params, scr);
+  auto temp_interface = std::make_shared<SteliosInterface>();
+  temp_interface->setup(kN_InputParams, kN_Classes, scr);
   MEMORY_BARRIER();
   interface = temp_interface;
   MEMORY_BARRIER();
@@ -104,20 +99,33 @@ void setup() {
   midi_interf->Setup(0);
   midi_interf->SetMIDISendChannel(1);
    DEBUG_PRINTLN("MIDI setup complete.");
-  if (midi_interf) {
-    midi_interf->SetNoteCallback([interface](bool noteon, uint8_t note_number, uint8_t vel_value) {
-      if (noteon) {
-        uint8_t midimsg[2] = { note_number, vel_value };
-        queue_try_add(&audio_app->qMIDINoteOn, &midimsg);
+  // if (midi_interf) {
+  //   midi_interf->SetNoteCallback([interface](bool noteon, uint8_t note_number, uint8_t vel_value) {
+  //     if (noteon) {
+  //       uint8_t midimsg[2] = { note_number, vel_value };
+  //       queue_try_add(&audio_app->qMIDINoteOn, &midimsg);
+  //     }
+  //      DEBUG_PRINTF("MIDI Note %d: %d\n", note_number, vel_value);
+  //   });
+  //    DEBUG_PRINTLN("MIDI note callback set.");
+  // }
+
+  usbserialIn = std::make_shared<SerialUSBInput>(kN_InputParams, scr, 115200);
+
+  usbserialIn->SetCallback([interface] (std::vector<float> values) {
+    if (values.size() == kN_InputParams) {
+      for (size_t i = 0; i < kN_InputParams; ++i) {
+        // Value is [-1, 1], scale to [0, 1]
+        float scaled_value = (values[i] + 1.0f) * 0.5f; // Scale to [0, 1]
+        // Post each value to the interface
+        if (i == 0) scr->post("In0: " + String(values[i], 4) + ", scale: " + String(scaled_value, 4));
       }
-       DEBUG_PRINTF("MIDI Note %d: %d\n", note_number, vel_value);
-    });
-     DEBUG_PRINTLN("MIDI note callback set.");
-  }
+      //interface->ProcessInput();
 
-  usbserialIn = std::make_shared<SerialUSBInput>(scr, 115200);
-
-
+    } else {
+      scr->post("Invalid input size: " + String(values.size()));
+    }
+  });
 
   WRITE_VOLATILE(core_0_ready, true);
   while (!READ_VOLATILE(core_1_ready)) {
@@ -141,12 +149,12 @@ void setup() {
 //         uint32_t i;
 //         float f;
 //     } converter;
-    
-//     converter.i = bytes[0] | 
-//                  (bytes[1] << 8) | 
-//                  (bytes[2] << 16) | 
+
+//     converter.i = bytes[0] |
+//                  (bytes[1] << 8) |
+//                  (bytes[2] << 16) |
 //                  (bytes[3] << 24);
-    
+
 //     return converter.f;
 // }
 
@@ -196,14 +204,14 @@ void setup1() {
 
 
   // Create audio app with memory barrier protection
-  {
-    auto temp_audio_app = std::make_shared<PAFSynthAudioApp>();
+  // {
+  //   auto temp_audio_app = std::make_shared<PAFSynthAudioApp>();
 
-    temp_audio_app->Setup(AudioDriver::GetSampleRate(), interface);
-    MEMORY_BARRIER();
-    audio_app = temp_audio_app;
-    MEMORY_BARRIER();
-  }
+  //   temp_audio_app->Setup(AudioDriver::GetSampleRate(), interface);
+  //   MEMORY_BARRIER();
+  //   audio_app = temp_audio_app;
+  //   MEMORY_BARRIER();
+  // }
 
   // Start audio driver
   AudioDriver::Setup();
@@ -219,6 +227,6 @@ void setup1() {
 
 void loop1() {
   // Audio app parameter processing loop
-  audio_app->loop();
+  //audio_app->loop();
   delay(1);
 }
