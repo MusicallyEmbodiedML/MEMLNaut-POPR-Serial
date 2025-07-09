@@ -204,5 +204,5 @@ void PAFSynthAudioApp::ProcessParams(const std::vector<float>& params)
     envdec=((params[20] * 3.f) + 0.1f)/9000.f; // Decay rate for the envelope
 
 
-     DEBUG_PRINTF("%f %f %f %f %f\n", paf0_cf,  paf0_bw, paf0_vib, paf0_vfr, paf0_shift);
+    //  DEBUG_PRINTF("%f %f %f %f %f\n", paf0_cf,  paf0_bw, paf0_vib, paf0_vfr, paf0_shift);
 }
