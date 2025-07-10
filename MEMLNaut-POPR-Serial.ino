@@ -46,8 +46,8 @@ volatile bool APP_SRAM interface_ready = false;
 
 
 // Input params from serial
-constexpr size_t kN_InputParams = 10;
-constexpr size_t kN_Classes = 2;
+constexpr size_t kN_InputParams = 15;
+constexpr size_t kN_Classes = 4;
 
 // Add these macros near other globals
 #define MEMORY_BARRIER() __sync_synchronize()
