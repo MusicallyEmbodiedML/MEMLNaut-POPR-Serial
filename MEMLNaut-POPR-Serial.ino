@@ -116,10 +116,12 @@ void setup() {
     if (values.size() == kN_InputParams) {
       for (size_t i = 0; i < kN_InputParams; ++i) {
         // Value is [-1, 1], scale to [0, 1]
-        float scaled_value = (values[i] + 1.0f) * 0.5f; // Scale to [0, 1]
-        // Post each value to the interface
-        //if (i == 0) scr->post("In0: " + String(values[i], 4) + ", scale: " + String(scaled_value, 4));
-        interface->SetInput(i, scaled_value);
+        //Q: why scale to this range?  
+        // float scaled_value = (values[i] + 1.0f) * 0.5f; // Scale to [0, 1]
+        // // Post each value to the interface
+        // //if (i == 0) scr->post("In0: " + String(values[i], 4) + ", scale: " + String(scaled_value, 4));
+        // interface->SetInput(i, scaled_value);
+        interface->SetInput(i, values[i]);
       }
       //interface->ProcessInput();
 
